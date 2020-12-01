@@ -1,0 +1,163 @@
+const int left_nslp_pin = 31;
+const int left_dir_pin = 29;
+const int left_pwm_pin = 40;
+const int right_nslp_pin = 11;
+const int right_dir_pin = 30;
+const int right_pwm_pin = 39;
+
+const int EMITEVEN = 61;
+const int EMITODD_R = 45;
+
+const int photrans1 = 64;
+const int photrans2 = 65;
+const int photrans3 = 68;
+const int photrans4 = 69;
+const int photrans5 = 47;
+const int photrans6 = 48;
+const int photrans7 = 52;
+const int photrans8 = 53;
+boolean turnedAlready = false;
+
+
+
+
+//Kp * error  + (Kd * difference in error(average of first 5 and last 5 of readings))
+
+void setup() {
+  // put your setup code here, to run once:
+pinMode(31, OUTPUT);
+pinMode(29, OUTPUT);
+pinMode(40, OUTPUT);
+pinMode(11, OUTPUT);
+pinMode(30, OUTPUT);
+pinMode(39, OUTPUT);
+
+// phototransistors LEDS
+pinMode(61, OUTPUT);
+pinMode(45, OUTPUT);
+
+Serial.begin(9600); 
+
+digitalWrite(right_dir_pin, LOW);
+digitalWrite(left_dir_pin, LOW);
+digitalWrite(right_nslp_pin, HIGH); // CHANGE HIGH
+digitalWrite(left_nslp_pin, HIGH); // CHANGE HIGH
+
+//MOTOR
+ analogWrite(right_pwm_pin, 75);
+  analogWrite(left_pwm_pin, 76);
+
+
+  // phototransistor leds
+digitalWrite(61, HIGH);
+digitalWrite(45, HIGH);
+
+
+
+
+
+}
+
+void loop() {
+
+
+digitalWrite(left_dir_pin, LOW);
+
+int ref1 = digitalRead(64);
+int ref2 = digitalRead(65);
+int ref3 = digitalRead(68);
+int ref4 = digitalRead(69);
+int ref5 = digitalRead(47);
+int ref6 = digitalRead(48);
+int ref7 = digitalRead(52);
+int ref8 = digitalRead(53);
+
+  
+
+pinMode(64, OUTPUT); 
+pinMode(65, OUTPUT);
+pinMode(68, OUTPUT);
+pinMode(69, OUTPUT);
+pinMode(47, OUTPUT);
+pinMode(48, OUTPUT);
+pinMode(52, OUTPUT);
+pinMode(53, OUTPUT); 
+
+digitalWrite(64, HIGH);
+digitalWrite(65, HIGH);
+digitalWrite(68, HIGH);
+digitalWrite(69, HIGH);
+digitalWrite(47, HIGH);
+digitalWrite(48, HIGH);
+digitalWrite(52, HIGH);
+digitalWrite(53, HIGH);
+
+delayMicroseconds(10); // A value 10-15
+
+pinMode(64, INPUT); 
+pinMode(65, INPUT);
+pinMode(68, INPUT);
+pinMode(69, INPUT);
+pinMode(47, INPUT);
+pinMode(48, INPUT);
+pinMode(52, INPUT);
+pinMode(53, INPUT);  
+
+delayMicroseconds(1000); // B value 
+
+
+  
+double fusedVa1ue1 = (-1.75*ref2-1.25*ref6-0.75*ref1-0.25*ref5+ 0.25*ref7 + 0.75*ref3 + 1.25*ref8+1.75*ref4); // does not work yet
+//delayMicroseconds(0); // testing
+
+ref1 = digitalRead(64);
+ref2 = digitalRead(65);
+ref3 = digitalRead(68);
+ref4 = digitalRead(69);
+ref5 = digitalRead(47);
+ref6 = digitalRead(48);
+ref7 = digitalRead(52);
+ref8 = digitalRead(53);
+
+
+ // 1 is black
+Serial.print(ref2);// (1) 
+Serial.print(ref6); // (2)
+Serial.print(ref1);// (3)
+Serial.print(ref5); // middle (4)
+Serial.print(ref7); // middle (5)
+Serial.print(ref3);// (6)
+Serial.print(ref8); //  (7)
+Serial.println(ref4); //(8)
+
+ 
+int Kp = 15; // proportional 
+int Kd = 60; // derivative
+
+double fusedValue2 = (-1.75*ref2-1.25*ref6-0.75*ref1-0.25*ref5+ 0.25*ref7 + 0.75*ref3 + 1.25*ref8+1.75*ref4);
+double derivative = fusedValue2 - fusedVa1ue1;
+double correction = Kp * fusedValue2 + Kd * derivative;
+
+analogWrite(right_pwm_pin, 74+correction); 
+analogWrite(left_pwm_pin, 74-correction);
+
+  if (ref1 == 1 & ref2 == 1 && ref3 == 1 && ref4 == 1 && ref5 == 1 && ref6 == 1 && ref7 == 1 && ref8 == 1) {
+    if(!turnedAlready) {
+      digitalWrite(right_dir_pin, HIGH);
+      digitalWrite(left_dir_pin, LOW);   
+      analogWrite(right_pwm_pin, 240); // works for 240, 120, 60
+       analogWrite(left_pwm_pin, 242); // works for 242, 121, 61
+      delay(250); // works for 250, 500, 1000
+      digitalWrite(right_dir_pin, LOW);
+      digitalWrite(left_dir_pin, LOW); 
+      turnedAlready = true; 
+    } else {
+
+       analogWrite(right_pwm_pin, 0); 
+       analogWrite(left_pwm_pin, 0);
+      digitalWrite(right_nslp_pin, LOW); // CHANGE HIGH
+      digitalWrite(left_nslp_pin, LOW); // CHANGE HIGH
+    }
+  }
+  
+}
